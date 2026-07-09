@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Cycle Time</title>
+    <script src="https://unpkg.com/@zxing/library@latest"></script>
+    <style>
+        :root {
+            --blue: #4472C4;
+            --blue-dark: #2F5597;
+            --bg: #ffffff;
+            --gray: #f2f2f2;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', 'Sarabun', 'Tahoma', sans-serif;
+            background: var(--bg);
+            color: #222;
+            padding-bottom: 24px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 26px;
+            font-weight: 600;
+            margin: 16px 0 20px;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        .field-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .field-box {
+            flex: 1;
+            background: var(--blue);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            min-height: 52px;
+        }
+
+        .field-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 10px 12px;
+            width: 100%;
+        }
+
+        .field-box input::placeholder {
+            color: rgba(255, 255, 255, 0.75);
+            font-weight: 600;
+        }
+
+        .qr-btn {
+            background: rgba(255, 255, 255, 0.18);
+            border: none;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 0 10px;
+            height: 52px;
+            cursor: pointer;
+            border-left: 1px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .qr-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .scanner-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .scanner-modal.d-none {
+            display: none;
+        }
+
+        .video-container {
+            width: 90vw;
+            max-width: 360px;
+            border: 2px solid #fff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .btn-cancel {
+            margin-top: 16px;
+            width: 90vw;
+            max-width: 360px;
+            padding: 10px 24px;
+            background: #c0392b;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .timer-box {
+            background: var(--blue);
+            border-radius: 8px;
+            margin: 18px 0 14px;
+            padding: 18px 10px;
+            text-align: center;
+        }
+
+        .timer-label {
+            color: #fff;
+            font-size: 15px;
+            margin-bottom: 6px;
+            opacity: 0.9;
+        }
+
+        .timer-display {
+            color: #fff;
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .round-info {
+            color: #fff;
+            font-size: 14px;
+            margin-top: 6px;
+            opacity: 0.9;
+        }
+
+        .buttons-row {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin: 16px 0 20px;
+        }
+
+        .round-btn {
+            width: 78px;
+            height: 78px;
+            border-radius: 50%;
+            background: var(--blue);
+            color: #fff;
+            border: none;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        .round-btn:active {
+            background: var(--blue-dark);
+        }
+
+        .round-btn:disabled {
+            background: #b7c6e6;
+            cursor: not-allowed;
+        }
+
+        .round-btn.stop {
+            background: #c0392b;
+        }
+
+        .round-btn.stop:disabled {
+            background: #e6b3ac;
+        }
+
+        .results {
+            background: var(--gray);
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+        }
+
+        .results table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .results td {
+            padding: 5px 2px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .results td:last-child {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .results .avg-row td {
+            font-weight: 700;
+            color: var(--blue-dark);
+            border-bottom: none;
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            background: #2e7d32;
+            color: #fff;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .save-btn:disabled {
+            background: #a5d6a7;
+            cursor: not-allowed;
+        }
+
+        .status-msg {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+            min-height: 18px;
+        }
+
+        .status-msg.ok {
+            color: #2e7d32;
+        }
+
+        .status-msg.err {
+            color: #c0392b;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Cycle Time</h1>
+
+    <div class="container">
+        <div class="field-row">
+            <div class="field-box">
+                <input id="date" type="date">
+                <button class="qr-btn" type="button" onclick="startScan('date')">QR</button>
+            </div>
+            <div class="field-box">
+                <input id="itemCode" type="text" placeholder="ItemCode">
+                <button class="qr-btn" type="button" onclick="startScan('itemCode')">QR</button>
+            </div>
+        </div>
+
+        <div class="field-row">
+            <div class="field-box">
+                <input id="line" type="text" placeholder="Line">
+                <button class="qr-btn" type="button" onclick="startScan('line')">QR</button>
+            </div>
+            <div class="field-box">
+                <input id="man" type="text" placeholder="Man">
+                <button class="qr-btn" type="button" onclick="startScan('man')">QR</button>
+            </div>
+        </div>
+
+        <div class="field-row">
+            <div class="field-box">
+                <input id="employee" type="text" placeholder="Employee">
+                <button class="qr-btn" type="button" onclick="startScan('employee')">QR</button>
+            </div>
+            <div class="field-box">
+                <input id="cycleStd" type="number" step="0.01" placeholder="Cycle STD (วิ)">
+                <button class="qr-btn" type="button" onclick="startScan('cycleStd')">QR</button>
+            </div>
+        </div>
+
+        <div class="timer-box">
+            <div class="timer-label">ช่องจับเวลา</div>
+            <div class="timer-display" id="timerDisplay">00:00.00</div>
+            <div class="round-info" id="roundInfo">รอบที่ 0 / 3</div>
+        </div>
+
+        <div class="buttons-row">
+            <button class="round-btn" id="btnStart" onclick="startTimer()">เริ่ม</button>
+            <button class="round-btn" id="btnRound" onclick="markRound()" disabled>รอบ</button>
+            <button class="round-btn stop" id="btnStop" onclick="stopTimer()" disabled>จบ</button>
+        </div>
+
+        <div class="results" id="results" style="display:none;">
+            <table>
+                <tr>
+                    <td>รอบที่ 1</td>
+                    <td id="r1">-</td>
+                </tr>
+                <tr>
+                    <td>รอบที่ 2</td>
+                    <td id="r2">-</td>
+                </tr>
+                <tr>
+                    <td>รอบที่ 3</td>
+                    <td id="r3">-</td>
+                </tr>
+                <tr class="avg-row">
+                    <td>ค่าเฉลี่ย</td>
+                    <td id="ravg">-</td>
+                </tr>
+            </table>
+        </div>
+
+        <button class="save-btn" id="btnSave" type="button" onclick="saveResult()" disabled>SAVE</button>
+        <div class="status-msg" id="statusMsg"></div>
+    </div>
+
+    <div id="scannerContainer" class="scanner-modal d-none">
+        <div class="video-container">
+            <video id="videoElement" style="width:100%; height:auto;"></video>
+        </div>
+        <button id="cancelButton" class="btn-cancel" type="button">ยกเลิก</button>
+    </div>
+
+    <script>
+        const scannerModal = document.getElementById('scannerContainer');
+        const scannerVideo = document.getElementById('videoElement');
+        const scannerCancelBtn = document.getElementById('cancelButton');
+        const btnSave = document.getElementById('btnSave');
+        const statusMsg = document.getElementById('statusMsg');
+        const dateInput = document.getElementById('date');
+        const itemCodeInput = document.getElementById('itemCode');
+        const lineInput = document.getElementById('line');
+        const manInput = document.getElementById('man');
+        const employeeInput = document.getElementById('employee');
+        const cycleStdInput = document.getElementById('cycleStd');
+        const codeReader = new ZXing.BrowserMultiFormatReader();
+        let activeScanTargetId = null;
+
+        function handleScanResult(result, err) {
+            if (result && activeScanTargetId) {
+                const targetInput = document.getElementById(activeScanTargetId);
+                if (targetInput) {
+                    targetInput.value = result.text;
+                    targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                stopScan();
+                if (navigator.vibrate) navigator.vibrate(120);
+            }
+            if (err && !(err instanceof ZXing.NotFoundException)) {
+                console.error(err);
+            }
+        }
+
+        window.startScan = async function (targetId) {
+            activeScanTargetId = targetId;
+            scannerModal.classList.remove('d-none');
+
+            try {
+                await codeReader.decodeFromConstraints(
+                    { video: { facingMode: { ideal: 'environment' } } },
+                    scannerVideo,
+                    handleScanResult
+                );
+            } catch (e1) {
+                try {
+                    await codeReader.decodeFromConstraints({ video: true }, scannerVideo, handleScanResult);
+                } catch (e2) {
+                    try {
+                        const devices = await codeReader.listVideoInputDevices();
+                        if (devices && devices.length > 0) {
+                            const deviceId = devices[devices.length - 1].deviceId;
+                            await codeReader.decodeFromVideoDevice(deviceId, scannerVideo, handleScanResult);
+                        } else {
+                            throw new Error('ไม่พบกล้องในอุปกรณ์นี้');
+                        }
+                    } catch (e3) {
+                        console.error(e3);
+                        stopScan();
+                    }
+                }
+            }
+        };
+
+        function stopScan() {
+            codeReader.reset();
+            scannerModal.classList.add('d-none');
+            activeScanTargetId = null;
+        }
+
+        scannerCancelBtn.addEventListener('click', stopScan);
+
+        let sessionStartTime = null;
+        let timerInterval = null;
+        let lastDisplayedElapsedMs = 0;
+        let roundTimes = [null, null, null];
+        let currentRound = 0;
+        const MAX_ROUNDS = 3;
+
+        function getDisplaySeconds(ms) {
+            const totalCentis = Math.floor(ms / 10);
+            return Number((totalCentis / 100).toFixed(2));
+        }
+
+        function getTimerDisplaySeconds(text) {
+            const [minutesPart, secondsPart] = text.split(':');
+            const [secondsPartOnly, centisPart = '00'] = secondsPart.split('.');
+            const minutes = parseInt(minutesPart, 10) || 0;
+            const seconds = parseInt(secondsPartOnly, 10) || 0;
+            const centis = parseInt(centisPart, 10) || 0;
+            return Number((minutes * 60 + seconds + centis / 100).toFixed(2));
+        }
+
+        function updateDisplayFor(now = Date.now()) {
+            if (sessionStartTime === null) return '00:00.00';
+            const elapsedMs = now - sessionStartTime;
+            lastDisplayedElapsedMs = elapsedMs;
+            const displayText = formatTime(elapsedMs);
+            document.getElementById('timerDisplay').textContent = displayText;
+            return displayText;
+        }
+
+        function formatTime(ms) {
+            const totalCentis = Math.floor(ms / 10);
+            const totalSeconds = Math.floor(totalCentis / 100);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            const centis = totalCentis % 100;
+            return String(minutes).padStart(2, '0') + ':' +
+                String(seconds).padStart(2, '0') + '.' +
+                String(centis).padStart(2, '0');
+        }
+
+        function tick() {
+            updateDisplayFor(Date.now());
+        }
+
+        function startTimer() {
+            sessionStartTime = Date.now();
+            lastDisplayedElapsedMs = 0;
+            currentRound = 1;
+            roundTimes = [null, null, null];
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('btnSave').disabled = true;
+            document.getElementById('timerDisplay').textContent = '00:00.00';
+            document.getElementById('r1').textContent = '-';
+            document.getElementById('r2').textContent = '-';
+            document.getElementById('r3').textContent = '-';
+            document.getElementById('ravg').textContent = '-';
+            updateRoundInfo();
+
+            timerInterval = setInterval(tick, 30);
+
+            document.getElementById('btnStart').disabled = true;
+            document.getElementById('btnRound').disabled = false;
+            document.getElementById('btnStop').disabled = false;
+        }
+
+        function recordActiveRound(now = Date.now()) {
+            if (currentRound < 1 || currentRound > MAX_ROUNDS) return;
+
+            const displayText = updateDisplayFor(now);
+            const roundedSec = getTimerDisplaySeconds(displayText);
+            roundTimes[currentRound - 1] = roundedSec;
+            document.getElementById('r' + currentRound).textContent = roundedSec.toFixed(2) + ' วิ';
+            document.getElementById('results').style.display = 'block';
+            return roundedSec;
+        }
+
+        function markRound() {
+            if (currentRound > MAX_ROUNDS) return;
+            const now = Date.now();
+            recordActiveRound(now);
+
+            currentRound++;
+
+            if (currentRound > MAX_ROUNDS) {
+                document.getElementById('btnRound').disabled = true;
+                finishAllRounds();
+            } else {
+                updateRoundInfo();
+            }
+        }
+
+        function stopTimer() {
+            const now = Date.now();
+            recordActiveRound(now);
+            clearInterval(timerInterval);
+            document.getElementById('btnStart').disabled = false;
+            document.getElementById('btnRound').disabled = true;
+            document.getElementById('btnStop').disabled = true;
+            finishAllRounds();
+        }
+
+        function finishAllRounds() {
+            clearInterval(timerInterval);
+            document.getElementById('btnRound').disabled = true;
+            document.getElementById('btnStop').disabled = true;
+            document.getElementById('btnStart').disabled = false;
+
+            const validTimes = roundTimes.filter(t => t !== null);
+            if (validTimes.length > 0) {
+                const avg = validTimes.reduce((a, b) => a + b, 0) / validTimes.length;
+                document.getElementById('ravg').textContent = avg.toFixed(2) + ' วิ';
+            }
+            updateSaveButton();
+        }
+
+        function updateSaveButton() {
+            const validTimes = roundTimes.filter(t => t !== null);
+            const hasAnyRound = validTimes.length > 0;
+            const completed = validTimes.length >= MAX_ROUNDS;
+            document.getElementById('btnSave').disabled = !hasAnyRound;
+            if (completed) {
+                document.getElementById('btnSave').disabled = false;
+            }
+        }
+
+        const API_URL = "https://script.google.com/macros/s/AKfycbzUVhYiXGFwCOwXz0bs9f9j-8Co6owJf1SGALSdBIhtUPqowvr4SKeRBAcbvwdkC05s3g/exec";
+
+        async function saveResult() {
+
+            const validTimes = roundTimes.filter(t => t !== null);
+            const avg = validTimes.length > 0
+                ? validTimes.reduce((a, b) => a + b, 0) / validTimes.length
+                : 0;
+
+            const data = {
+                date: dateInput.value,
+                itemCode: itemCodeInput.value,
+                item: itemCodeInput.value,
+                line: lineInput.value,
+                man: manInput.value,
+                employee: employeeInput.value,
+                cycleStd: cycleStdInput.value,
+                round1: roundTimes[0] !== null ? roundTimes[0].toFixed(2) : "",
+                round2: roundTimes[1] !== null ? roundTimes[1].toFixed(2) : "",
+                round3: roundTimes[2] !== null ? roundTimes[2].toFixed(2) : "",
+                average: avg.toFixed(2)
+            };
+
+            btnSave.disabled = true;
+            statusMsg.className = 'status-msg';
+            statusMsg.textContent = "Saving...";
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const responseText = await response.text();
+                let result = {};
+                try {
+                    result = responseText ? JSON.parse(responseText) : {};
+                } catch (e) {
+                    result = {};
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}${responseText ? ': ' + responseText.slice(0, 180) : ''}`);
+                }
+
+                statusMsg.className = 'status-msg ok';
+                statusMsg.textContent = result && result.message ? result.message : (result && result.success ? "Saved to Google Sheet" : "Saved to Google Sheet");
+                btnSave.disabled = false;
+            } catch (err) {
+                const message = err && err.message ? err.message : String(err);
+                const hint = message.includes('Failed to fetch') || message.includes('405') || message.includes('404') || message.includes('302')
+                    ? ' Paste the deployed Apps Script web app URL in the field above and publish it as a web app (Execute as me, Anyone).'
+                    : '';
+                statusMsg.className = 'status-msg err';
+                statusMsg.textContent = 'Failed to save' + hint;
+                btnSave.disabled = false;
+            }
+
+        }
+
+        function updateRoundInfo() {
+            const shown = Math.min(currentRound, MAX_ROUNDS);
+            document.getElementById('roundInfo').textContent =
+                'รอบที่ ' + shown + ' / ' + MAX_ROUNDS;
+        }
+
+        window.onload = function () {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            document.getElementById('date').value = yyyy + '-' + mm + '-' + dd;
+        };
+    </script>
+</body>
+
+</html>
