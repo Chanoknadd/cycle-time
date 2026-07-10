@@ -559,13 +559,17 @@
             statusMsg.textContent = "Saving...";
 
             try {
+                const formData = new URLSearchParams();
+                Object.entries(data).forEach(([key, value]) => {
+                    formData.append(key, value);
+                });
+
                 const response = await fetch(API_URL, {
                     method: "POST",
                     headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json"
+                        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
                     },
-                    body: JSON.stringify(data)
+                    body: formData.toString()
                 });
 
                 const responseText = await response.text();
@@ -586,7 +590,7 @@
             } catch (err) {
                 const message = err && err.message ? err.message : String(err);
                 const hint = message.includes('Failed to fetch') || message.includes('405') || message.includes('404') || message.includes('302')
-                    ? ' Paste the deployed Apps Script web app URL in the field above and publish it as a web app (Execute as me, Anyone).'
+                    ? ' The Apps Script web app may not be published correctly. Publish it as a web app with Execute as me and Anyone.'
                     : '';
                 statusMsg.className = 'status-msg err';
                 statusMsg.textContent = 'Failed to save' + hint;
