@@ -531,7 +531,7 @@
             }
         }
 
-        const API_URL = "https://script.google.com/macros/s/AKfycbzUVhYiXGFwCOwXz0bs9f9j-8Co6owJf1SGALSdBIhtUPqowvr4SKeRBAcbvwdkC05s3g/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxSig1Ug31s2Sj3ANVtPf7NBWptA0FYu1t6tgn3zTSMl6vTS-sG4lDrYYR2LGV6WxLlhQ/exec";
 
         async function saveResult() {
 
@@ -560,17 +560,16 @@
 
             try {
                 const formData = new URLSearchParams();
+
                 Object.entries(data).forEach(([key, value]) => {
                     formData.append(key, value);
                 });
 
                 const response = await fetch(API_URL, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
-                    },
-                    body: formData.toString()
+                    body: formData
                 });
+
 
                 const responseText = await response.text();
                 let result = {};
@@ -590,7 +589,7 @@
             } catch (err) {
                 const message = err && err.message ? err.message : String(err);
                 const hint = message.includes('Failed to fetch') || message.includes('405') || message.includes('404') || message.includes('302')
-                    ? ' The Apps Script web app may not be published correctly. Publish it as a web app with Execute as me and Anyone.'
+                    ? ' Paste the deployed Apps Script web app URL in the field above and publish it as a web app (Execute as me, Anyone).'
                     : '';
                 statusMsg.className = 'status-msg err';
                 statusMsg.textContent = 'Failed to save' + hint;
