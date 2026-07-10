@@ -263,11 +263,16 @@
         <div class="field-row">
             <div class="field-box">
                 <input id="date" type="date">
-                <button class="qr-btn" type="button" onclick="startScan('date')">QR</button>
             </div>
             <div class="field-box">
                 <input id="itemCode" type="text" placeholder="ItemCode">
                 <button class="qr-btn" type="button" onclick="startScan('itemCode')">QR</button>
+            </div>
+        </div>
+
+        <div class="field-row">
+            <div class="field-box">
+                <input id="item" type="text" placeholder="Item">
             </div>
         </div>
 
@@ -345,6 +350,7 @@
         const statusMsg = document.getElementById('statusMsg');
         const dateInput = document.getElementById('date');
         const itemCodeInput = document.getElementById('itemCode');
+        const itemInput = document.getElementById('item');
         const lineInput = document.getElementById('line');
         const manInput = document.getElementById('man');
         const employeeInput = document.getElementById('employee');
@@ -540,19 +546,19 @@
                 ? validTimes.reduce((a, b) => a + b, 0) / validTimes.length
                 : 0;
 
-            const data = {
-                date: dateInput.value,
-                itemCode: itemCodeInput.value,
-                item: itemCodeInput.value,
-                line: lineInput.value,
-                man: manInput.value,
-                employee: employeeInput.value,
-                cycleStd: cycleStdInput.value,
-                round1: roundTimes[0] !== null ? roundTimes[0].toFixed(2) : "",
-                round2: roundTimes[1] !== null ? roundTimes[1].toFixed(2) : "",
-                round3: roundTimes[2] !== null ? roundTimes[2].toFixed(2) : "",
-                average: avg.toFixed(2)
-            };
+                const data = {
+                    date: dateInput.value,
+                    itemCode: itemCodeInput.value,
+                    item: itemInput.value,
+                    line: lineInput.value,
+                    man: manInput.value,
+                    employee: employeeInput.value,
+                    cycleStd: cycleStdInput.value,
+                    round1: roundTimes[0] !== null ? roundTimes[0].toFixed(2) : "",
+                    round2: roundTimes[1] !== null ? roundTimes[1].toFixed(2) : "",
+                    round3: roundTimes[2] !== null ? roundTimes[2].toFixed(2) : "",
+                    average: avg.toFixed(2)
+                };
 
             btnSave.disabled = true;
             statusMsg.className = 'status-msg';
