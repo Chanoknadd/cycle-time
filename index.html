@@ -363,9 +363,14 @@
                 const targetInput = document.getElementById(activeScanTargetId);
                 if (targetInput) {
                     targetInput.value = result.text;
-                    targetInput.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-                stopScan();
+targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+
+// ถ้าสแกน Item Code ให้ดึงข้อมูลอัตโนมัติ
+if (activeScanTargetId === "itemCode") {
+    loadItem(result.text);
+}
+
+stopScan();
                 if (navigator.vibrate) navigator.vibrate(120);
             }
             if (err && !(err instanceof ZXing.NotFoundException)) {
@@ -537,7 +542,7 @@
             }
         }
 
-        const API_URL = "https://script.google.com/macros/s/AKfycbxSig1Ug31s2Sj3ANVtPf7NBWptA0FYu1t6tgn3zTSMl6vTS-sG4lDrYYR2LGV6WxLlhQ/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxdHQh86FVK-_cvuLtzDoYi4nTlS62gjidZdL4dGZngr1DK6PECePN2KbbQm5OWc3Dq2Q/exec";
 
         async function saveResult() {
 
@@ -605,12 +610,49 @@
         }
 
         function updateRoundInfo() {
-            const shown = Math.min(currentRound, MAX_ROUNDS);
-            document.getElementById('roundInfo').textContent =
-                'รอบที่ ' + shown + ' / ' + MAX_ROUNDS;
+    const shown = Math.min(currentRound, MAX_ROUNDS);
+    document.getElementById('roundInfo').textContent =
+        'รอบที่ ' + shown + ' / ' + MAX_ROUNDS;
+}
+
+
+// =======================
+// โหลดข้อมูล Item
+// =======================
+async function loadItem(itemCode) {
+
+    const url = API_URL + "?itemCode=" + encodeURIComponent(itemCode);
+
+    try {
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.success) {
+
+            document.getElementById("cycleStd").value = data.cycleStd;
+
+            // ถ้ามีช่อง Item
+            const item = document.getElementById("item");
+            if (item) item.value = data.item;
+
+        } else {
+
+            alert("ไม่พบ Item Code");
+
         }
 
-        window.onload = function () {
+    } catch (e) {
+
+        console.error(e);
+        alert("โหลดข้อมูลไม่สำเร็จ");
+
+    }
+
+}
+
+
+window.onload = function () {
             const today = new Date();
             const yyyy = today.getFullYear();
             const mm = String(today.getMonth() + 1).padStart(2, '0');
